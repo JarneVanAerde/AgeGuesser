@@ -8,6 +8,7 @@ builder.Services.AddStackExchangeRedisCache(options =>
 {
     options.Configuration = "localhost:6379";
 });
+builder.Services.AddHybridCache();
 
 var app = builder.Build();
 
