@@ -1,18 +1,21 @@
+using System.Text.Json;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Caching.Memory;
 
 namespace AgeGuesser.Api;
 
 [Route("api/guess-age")]
 [ApiController]
-public class GuessAgeController(HttpClient httpClient, IMemoryCache memoryCache) : ControllerBase
+public class GuessAgeController(
+    HttpClient httpClient, IMemoryCache memoryCache, IDistributedCache distributedCache) : ControllerBase
 {
     private record AgeGuessResponse(int Age);
     
     [HttpGet]
     public async Task<ActionResult<string>> GuessAge([FromQuery] string name)
     {
-        var ageGuessResponse = await GetWithMemoryCache(name);
+        var ageGuessResponse = await GetWithDistributedCache(name);
         return Ok($"Hello {name}, your age is guessed to be around {ageGuessResponse.Age}.");
     }
 
@@ -23,6 +26,21 @@ public class GuessAgeController(HttpClient httpClient, IMemoryCache memoryCache)
             await GetGuessedAge(name));
 
         return ageGuessResponse!;
+    }
+    
+    private async Task<AgeGuessResponse> GetWithDistributedCache(string name)
+    {
+        var cacheKey = $"guessedAge:{name}";
+
+        var ageGuessResponseJson = await distributedCache.GetStringAsync(cacheKey);
+        if (ageGuessResponseJson is null)
+        {
+            var ageGuesserResponse = await GetGuessedAge(name);
+            await distributedCache.SetStringAsync(cacheKey, JsonSerializer.Serialize(ageGuesserResponse));
+            return ageGuesserResponse;
+        }
+
+        return JsonSerializer.Deserialize<AgeGuessResponse>(ageGuessResponseJson)!;
     }
 
     private async Task<AgeGuessResponse> GetGuessedAge(string name)

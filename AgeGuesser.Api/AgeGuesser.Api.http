@@ -1,6 +1,6 @@
 @AgeGuesser.Api_HostAddress = http://localhost:5217
 
-GET {{AgeGuesser.Api_HostAddress}}/api/guess-age?name=Jarne
+GET {{AgeGuesser.Api_HostAddress}}/api/guess-age?name=Ellen
 Accept: application/json
 
 ###
