@@ -51,9 +51,12 @@ public class GuessAgeController(
     {
         var cacheKey = $"guessedAge:{name}";
         var ageGuessResponse = await hybridCache.GetOrCreateAsync<AgeGuessResponse>(cacheKey, async _ =>
-            await GetGuessedAge(name));
-
-        return ageGuessResponse!;
+            await GetGuessedAge(name), new HybridCacheEntryOptions
+        {
+            Flags = HybridCacheEntryFlags.DisableDistributedCache
+        });
+        
+        return ageGuessResponse;
     }
     
     private async Task<AgeGuessResponse> GetGuessedAge(string name)
